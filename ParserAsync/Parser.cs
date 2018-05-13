@@ -61,7 +61,6 @@ namespace ParserAsync
             }
             await Task.WhenAll(tasks);
             logger.Info("Complete!");
-            Console.WriteLine("Complete!");
         }
     }
 }
