@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using HtmlAgilityPack;
 using NLog;
+using System.Threading;
 
 namespace ParserAsync
 {
@@ -9,9 +10,18 @@ namespace ParserAsync
     {
         private readonly DataCollector dataCollector = new DataCollector();
         private readonly Logger logger = LogManager.GetLogger("default");
+        private readonly string[] urls;
+        private int countTaskComplete = 0;
+
+        public Parser(string[] urls)
+        {
+            this.urls = urls;
+        }
 
         private async Task CollectCountUrlsFromPage(string url, int number)
         {
+            Interlocked.Increment(ref countTaskComplete);
+            logger.Info($"Complete {countTaskComplete} of {urls.Length}");
             int count = await Parse(url);
             dataCollector.Add(url, count, number);
         }
@@ -30,7 +40,7 @@ namespace ParserAsync
                 }
                 catch (Exception x)
                 {
-                    logger.Error(x.Message);
+                    logger.Error($"{url}: {x.Message}");
                     return 0;
                 }
                 foreach (HtmlNode link in doc.DocumentNode.SelectNodes("//a[@href]"))
@@ -42,7 +52,7 @@ namespace ParserAsync
             });
         }
 
-        public async void ParsePages(string[] urls)
+        public async void ParsePages()
         {
             var tasks = new Task[urls.Length];
             for (int i = 0; i < urls.Length; i++)
